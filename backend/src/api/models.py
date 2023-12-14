@@ -62,6 +62,9 @@ class Media(models.Model):
 
     def __str__(self):
         return f"{self.title}"
+    
+    class Meta:
+        unique_together = ["title", "release_date"]
 
 
 class Movie(Media):
