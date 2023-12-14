@@ -4,12 +4,10 @@ from django.contrib.auth.models import AbstractUser
 
 
 class User(AbstractUser):
-  buddies = models.ManyToManyField("self", through="Buddies")
-  groups = models.ManyToManyField("Group", through="GroupStatus",
-                                    related_name="members")
-  parties = models.ManyToManyField("WatchParty", through="PartyStatus",
-                                    related_name="participants")
-  media= models.ManyToManyField("Media", through="UserMediaInteraction", 
+  buddies = models.ManyToManyField("self")
+  groups = models.ManyToManyField("Group", related_name="members")
+  parties = models.ManyToManyField("WatchParty", related_name="members")
+  media = models.ManyToManyField("Media", through="UserMediaInteraction", 
                                 related_name="interactors")
 
 
@@ -23,46 +21,6 @@ class WatchParty(models.Model):
     media = models.ForeignKey("Media", on_delete=models.CASCADE, related_name="parties")
 
 
-class Media(models.Model):
-    MOVIE = 1
-    SHOW = 2
-    EPISODE = 3
-
-    TYPES = (
-        (MOVIE, "MOVIE"),
-        (SHOW, "SHOW"),
-        (EPISODE, "EPISODE"),
-    )
-
-    title = models.TextField()
-    media_type = models.PositiveSmallIntegerField(choices=TYPES)                                
-    tv_show = models.ForeignKey("self", on_delete=models.CASCADE, blank=True,
-                                null=True, related_name="episodes")
-    next_media = models.OneToOneField("self", blank=True, null=True, 
-                                      on_delete=models.CASCADE,
-                                      related_name="previous_media")
-    season = models.ForeignKey("season", blank=True, null=True, 
-                               on_delete=models.CASCADE, 
-                               related_name="episodes")
-    episode_num = models.PositiveIntegerField(blank=True, null=True)
-    
-    crew = models.ManyToManyField("Cast", on_delete=models.CASCADE)  
-    cover_image = models.ImageField(blank=True, null=True)
-
-    @property
-    def avg_rating(self):
-        return round(UserMediaInteraction.objects.filter(media__pk=self.pk)\
-    .aggregate(rating=models.Avg("rating",default=0))["rating"], 2)
-
-    def __str__(self):
-        return f"{self.title}"
-
-
-class Season(models.Model):
-    title = models.TextField()
-    season_num = models.PositiveIntegerField()
-
-    
 class Cast(models.Model):
     ACTOR = 1
     DIRECTOR = 2
@@ -82,71 +40,135 @@ class Cast(models.Model):
         return f"{self.first_name} {self.last_name}"
 
 
-class Comment(models.Model):
-    content = models.TextField()
-    author = models.ForeignKey("User", on_delete=models.CASCADE)
+class Genre(models.Model):
+    name = models.CharField(max_length=127)
+    description = models.CharField(max_length=255)
+
+
+class Media(models.Model):
+    title = models.TextField() 
+    release_date = models.DateField()
+    
+    next_media = models.OneToOneField("self", blank=True, null=True, 
+                                      on_delete=models.CASCADE,
+                                      related_name="previous_media")
+    crew = models.ManyToManyField(Cast)  
+    cover_image = models.TextField(default="static/images/no_cover_image.png")
+
+    @property
+    def avg_rating(self):
+        return round(Review.objects.filter(media__pk=self.pk)\
+    .aggregate(rating=models.Avg("rating", default=0))["rating"], 2)
+
+    def __str__(self):
+        return f"{self.title}"
+
+
+class Movie(Media):
+    duration = models.DurationField()
+    genre = models.ManyToManyField(Genre, blank=True, null=True,
+                                   related_name="movies")
+
+
+class Episode(Media):
+    duration = models.DurationField()
+    genre = models.ManyToManyField(Genre, blank=True, null=True,
+                                   related_name="episodes")
+    tv_show = models.ForeignKey("show", on_delete=models.CASCADE, blank=True,
+                                null=True, related_name="episodes")
+    season = models.ForeignKey("season", blank=True, null=True, 
+                               on_delete=models.CASCADE, 
+                               related_name="episodes")
+    episode_num = models.PositiveIntegerField(blank=True, null=True)
+
+
+class Show(Media):
+    genre = models.ManyToManyField(Genre, blank=True, null=True, 
+                                   related_name="shows")
+    @property
+    def num_season(self):
+        # TODO
+        return
+    
+    @property
+    def num_episodes(self):
+        # TODO
+        return
+    
+
+class Season(models.Model):
+    title = models.TextField()
+    show = models.ForeignKey("show", on_delete=models.CASCADE)
+    season_num = models.PositiveIntegerField(default=1)
+
+
+class Review(models.Model):
+    author = models.ForeignKey(User, on_delete=models.CASCADE)
+    media = models.ForeignKey(Media, on_delete=models.CASCADE)
     datetime = models.DateTimeField()
-    visibility = models.IntegerField()
-
-
-class Buddies(models.Model):
-    PENDING = 0
-    APPROVED = 1
-
-    STATUSES = (
-        (PENDING, "Pending"),
-        (APPROVED, "Approved"),
-    )
-
-    user = models.ForeignKey("User", on_delete=models.CASCADE)
-    buddy = models.ForeignKey("User", on_delete=models.CASCADE)
-    status = models.PositiveSmallIntegerField(choices=STATUSES)
-
-    class Meta:
-        unique_together = ['user', 'buddy']
-
-
-class GroupStatus(models.Model):
-    PENDING = 0
-    APPROVED = 1
-
-    STATUSES = (
-        (PENDING, "Pending"),
-        (APPROVED, "Approved"),
-    )
-
-    user = models.ForeignKey("User", on_delete=models.CASCADE)
-    group = models.ForeignKey("Group", on_delete=models.CASCADE)
-    status = models.PositiveSmallIntegerField(choices=STATUSES)
-
-    class Meta:
-        unique_together = ['user', 'group']
-
-
-class PartyStatus(models.Model):
-    PENDING = 0
-    APPROVED = 1
-
-    STATUSES = (
-        (PENDING, "Pending"),
-        (APPROVED, "Approved"),
-    )
-
-    user = models.ForeignKey("User", on_delete=models.CASCADE)
-    party = models.ForeignKey("WatchParty", on_delete=models.CASCADE)
-    status = models.PositiveSmallIntegerField(choices=STATUSES)
-
-    class Meta:
-        unique_together = ['user', 'party']
-
-
-class UserMediaInteraction(models.Model):
-    user = models.ForeignKey("User", on_delete=models.CASCADE)
-    media = models.ForeignKey("Media", on_delete=models.CASCADE)
-    comment = models.ForeignKey("Comment", on_delete=models.CASCADE, blank=True,
-                                null=True)
+    comment = models.TextField(blank=True, null=True)
+    edited = models.BooleanField(default=False)
     rating = models.FloatField(blank=True, null=True,
                                choices=[(i/2,i/2) for i in range(11)])
 
+
+class Invite(models.Model):
+    first_sent = models.DateTimeField(auto_now_add=True)
+    last_renewed = models.DateTimeField(auto_now_add=True)
+    accepted = models.BooleanField(default=False)
+
     class Meta:
-        unique_together = ['user', 'media', 'comment']
+        abstract = True
+
+
+class BuddiesInvite(Invite):
+    sender = models.ForeignKey("User", on_delete=models.CASCADE, related_name="send_buddies_invite")
+    receiver = models.ForeignKey("User", on_delete=models.CASCADE, related_name="received_buddies_invite")
+    class Meta:
+        unique_together = ['sender', 'receiver']
+
+
+class GroupInvite(Invite):
+    sender = models.ForeignKey("User", on_delete=models.CASCADE, related_name="send_group_invite")
+    receiver = models.ForeignKey("User", on_delete=models.CASCADE, related_name="received_group_invite")
+    group = models.ForeignKey("Group", on_delete=models.CASCADE)
+
+    class Meta:
+        unique_together = ['receiver', 'group']
+
+class PartyInvite(Invite):
+    sender = models.ForeignKey("User", on_delete=models.CASCADE, related_name="send_party_invite")
+    receiver = models.ForeignKey("User", on_delete=models.CASCADE, related_name="received_party_invite")
+    party = models.ForeignKey("WatchParty", on_delete=models.CASCADE)
+
+    class Meta:
+        unique_together = ['receiver', 'party']
+
+
+class UserMediaInteraction(models.Model):
+    WATCHED = 1
+    FAVORITED = 2
+    REVIEWED = 3
+    LISTED = 4
+    
+    INTERACTION_TYPE = (
+        (WATCHED, "watched"),
+        (FAVORITED, "favorited"),
+        (REVIEWED, "reviewed"),
+        (LISTED, "listed")
+    )
+
+    ONLY_ME = -2
+    MY_GROUPS = -1
+    EVERYONE = 0
+
+    user = models.ForeignKey("user", on_delete=models.CASCADE)
+    media = models.ForeignKey("media", on_delete=models.CASCADE)
+    interaction_type = models.PositiveSmallIntegerField(choices=INTERACTION_TYPE)
+    review = models.OneToOneField("review", on_delete=models.CASCADE, null=True,
+                                  blank=True)
+    visibility = models.IntegerField()
+
+    class Meta:
+        unique_together = ["user", "media", "interaction_type"]
+    
