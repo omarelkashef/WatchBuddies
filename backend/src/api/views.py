@@ -20,15 +20,20 @@ movie = MovieDetail.as_view()
 
 
 class MediaReviewsList(generics.ListCreateAPIView):
-    queryset = Review.objects.all()
     serializer_class = ReviewsSerializer
+
+    def get_queryset(self):
+        return Review.objects.filter(media__pk=self.kwargs.get("pk"))
 
 reviews = MediaReviewsList.as_view()
 
 
 class MediaReviewsDetail(generics.RetrieveUpdateDestroyAPIView):
-    queryset = Review.objects.all()
     serializer_class = ReviewsSerializer
+
+    def get_queryset(self):
+        return Review.objects.filter(pk=self.kwargs.get("review_pk"), 
+                                    media__pk=self.kwargs.get("pk"))
 
 review = MediaReviewsDetail.as_view()
 

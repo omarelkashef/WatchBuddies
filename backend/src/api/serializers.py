@@ -51,7 +51,7 @@ class MovieSerializer(serializers.ModelSerializer):
         genre_data = validated_data.pop("genre")
         movie = Movie.objects.create(**validated_data)
         for c in cast_data:
-            cast = Cast.objects.get_or_create(**c)
+            cast = Cast.objects.get_or_create(c.pk)
             movie.crew.add(cast)
         for genre in genre_data:
             movie.genre.add(genre)        
