@@ -19,6 +19,20 @@ class MovieDetail(generics.RetrieveUpdateDestroyAPIView):
 movie = MovieDetail.as_view()
 
 
+class MediaReviewsList(generics.ListCreateAPIView):
+    queryset = Review.objects.all()
+    serializer_class = ReviewsSerializer
+
+reviews = MediaReviewsList.as_view()
+
+
+class MediaReviewsDetail(generics.RetrieveUpdateDestroyAPIView):
+    queryset = Review.objects.all()
+    serializer_class = ReviewsSerializer
+
+review = MediaReviewsDetail.as_view()
+
+
 class GenresList(generics.ListCreateAPIView):
     queryset = Genre.objects.all()
     serializer_class = GenreSerializer
@@ -45,3 +59,4 @@ class CastDetail(generics.RetrieveUpdateDestroyAPIView):
     serializer_class = CastSerializer
 
 cast = CastDetail.as_view()
+

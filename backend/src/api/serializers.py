@@ -22,6 +22,17 @@ class GenreSerializer(serializers.ModelSerializer):
         fields = "__all__"
 
 
+class ReviewsSerializer(serializers.ModelSerializer):
+    author = serializers.PrimaryKeyRelatedField(queryset=User.objects.all())
+    media = serializers.PrimaryKeyRelatedField(queryset=Media.objects.all())
+    datetime = serializers.ReadOnlyField()
+    edited = serializers.ReadOnlyField()
+
+    class Meta:
+        model = Review
+        fields = "__all__"
+
+
 class MovieSerializer(serializers.ModelSerializer):
     crew = serializers.PrimaryKeyRelatedField(many=True, queryset=Cast.objects.all())
     avg_rating = serializers.ReadOnlyField()

@@ -108,7 +108,8 @@ class Season(models.Model):
 class Review(models.Model):
     author = models.ForeignKey(User, on_delete=models.CASCADE)
     media = models.ForeignKey(Media, on_delete=models.CASCADE)
-    datetime = models.DateTimeField()
+    datetime = models.DateTimeField(auto_now_add=True)
+    last_edited = models.DateTimeField(auto_now_add=True)
     comment = models.TextField(blank=True, null=True)
     edited = models.BooleanField(default=False)
     rating = models.FloatField(blank=True, null=True,
