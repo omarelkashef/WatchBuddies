@@ -18,6 +18,56 @@ class MovieDetail(generics.RetrieveUpdateDestroyAPIView):
 
 movie = MovieDetail.as_view()
 
+class ShowsList(generics.ListCreateAPIView):
+    queryset = Show.objects.all()
+    serializer_class = ShowSerializer
+
+shows = ShowsList.as_view()
+
+
+class ShowDetail(generics.RetrieveUpdateDestroyAPIView):
+    queryset = Show.objects.all()
+    serializer_class = ShowSerializer
+
+show = ShowDetail.as_view()
+
+
+class EpisodesList(generics.ListCreateAPIView):
+    queryset = Episode.objects.all()
+    serializer_class = EpisodeSerializer
+
+episodes = EpisodesList.as_view()
+
+
+class EpisodeDetail(generics.RetrieveUpdateDestroyAPIView):
+    queryset = Episode.objects.all()
+    serializer_class = EpisodeSerializer
+
+episode = EpisodeDetail.as_view()
+
+
+class SeasonsList(generics.ListCreateAPIView):
+    queryset = Season.objects.all()
+    serializer_class = SeasonSerializer
+
+seasons = SeasonsList.as_view()
+
+
+class SeasonDetail(generics.RetrieveUpdateDestroyAPIView):
+    queryset = Season.objects.all()
+    serializer_class = SeasonSerializer
+
+season = SeasonDetail.as_view()
+
+
+class ShowSeasonsList(generics.RetrieveUpdateDestroyAPIView):
+    serializer_class = SeasonSerializer
+    
+    def get_queryset(self):
+        return Season.objects.filter(show__pk=self.kwargs.get("show_pk"))
+
+
+show_seasons = ShowSeasonsList.as_view()
 
 class MediaReviewsList(generics.ListCreateAPIView):
     serializer_class = ReviewsSerializer

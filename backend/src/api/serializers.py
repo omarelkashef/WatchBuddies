@@ -60,32 +60,47 @@ class MovieSerializer(serializers.ModelSerializer):
         
 
 class EpisodeSerializer(serializers.ModelSerializer):
-    crew = serializers.StringRelatedField(read_only=True, many=True)
-    tv_show = serializers.StringRelatedField(source='show')
-    season_num = serializers.SlugRelatedField(source='show',
+    crew = serializers.PrimaryKeyRelatedField(many=True, queryset=Cast.objects.all())
+    tv_show = serializers.PrimaryKeyRelatedField(queryset=Show.objects.all())
+    genre = serializers.SlugRelatedField(many=True, slug_field='name', queryset=Genre.objects.all())
+    season_num = serializers.SlugRelatedField(source='season',
                                               slug_field="season_num",
-                                              queryset=Season.objects.all())
-    season_title = serializers.StringRelatedField(source='show', read_only=True)
+                                              read_only=True)
+    season_title = serializers.SlugRelatedField(source='season',
+                                              slug_field="title",
+                                              read_only=True)
+    season_id = serializers.PrimaryKeyRelatedField(source="season", queryset=Season.objects.all())
     avg_rating = serializers.ReadOnlyField()
+    cover_image = serializers.CharField(allow_blank=True)
+    previous_media = serializers.PrimaryKeyRelatedField(allow_null=True, queryset=Show.objects.all())
+    next_media = serializers.PrimaryKeyRelatedField(allow_null=True, queryset=Show.objects.all())
+    
     class Meta:
-        model = Movie
+        model = Episode
         fields = ['id', 'title', 'genre', 'crew', 'cover_image', 'avg_rating',
                 'next_media', 'previous_media', 'duration', 'release_date',
-                'tv_show', 'season_num', 'season_title', 'episode_num']
+                'tv_show', 'season_num', 'season_title', 'season_id','episode_num']
 
 
 class ShowSerializer(serializers.ModelSerializer):
     crew = serializers.PrimaryKeyRelatedField(many=True, queryset=Cast.objects.all())
-    episodes = serializers.StringRelatedField()
-    num_season = serializers.SlugRelatedField(source='show',
-                                              slug_field="season_num",
-                                              queryset=Season.objects.all())
-    season_title = serializers.StringRelatedField(source='show', read_only=True)
+    episodes = serializers.StringRelatedField(many=True, allow_null=True)
+    num_seasons = serializers.ReadOnlyField()
+    num_episodes = serializers.ReadOnlyField()
     avg_rating = serializers.ReadOnlyField()
+    genre = serializers.SlugRelatedField(many=True, slug_field='name', queryset=Genre.objects.all())
+    cover_image = serializers.CharField(allow_blank=True)
+    previous_media = serializers.PrimaryKeyRelatedField(allow_null=True, queryset=Show.objects.all())
+    next_media = serializers.PrimaryKeyRelatedField(allow_null=True, queryset=Show.objects.all())
+    
     class Meta:
         model = Show
-        fields = ['id', 'title', 'genre', 'crew', 'cover_image', 'avg_rating',
-        'next_media', 'previous_media', 'release_date']
+        fields = ['id', 'title', 'genre', 'crew', 'num_seasons', 'num_episodes', 'episodes',
+                  'cover_image', 'avg_rating', 'next_media', 'previous_media', 'release_date']
 
 
 
+class SeasonSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = Season
+        fields = "__all__"

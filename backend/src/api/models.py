@@ -34,6 +34,7 @@ class Cast(models.Model):
 
     first_name = models.TextField()
     last_name = models.TextField()
+    birthdate = models.DateField()
     cast_type = models.PositiveSmallIntegerField(choices=TYPES)
 
     def __str__(self):
@@ -89,12 +90,14 @@ class Show(Media):
     genre = models.ManyToManyField(Genre, blank=True, null=True, 
                                    related_name="shows")
     @property
-    def num_season(self):
+    def num_seasons(self):
         return Season.objects.filter(show__pk=self.pk).count()
     
     @property
     def num_episodes(self):
-        return Episode.objects.filter(show__pk=self.pk).count()
+        return Episode.objects.filter(tv_show__pk=self.pk).count()
+
+
     
 
 class Season(models.Model):
