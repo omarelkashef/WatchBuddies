@@ -90,13 +90,11 @@ class Show(Media):
                                    related_name="shows")
     @property
     def num_season(self):
-        # TODO
-        return
+        return Season.objects.filter(show__pk=self.pk).count()
     
     @property
     def num_episodes(self):
-        # TODO
-        return
+        return Episode.objects.filter(show__pk=self.pk).count()
     
 
 class Season(models.Model):

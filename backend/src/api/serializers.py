@@ -58,7 +58,6 @@ class MovieSerializer(serializers.ModelSerializer):
         movie.save()
         return movie
         
-            
 
 class EpisodeSerializer(serializers.ModelSerializer):
     crew = serializers.StringRelatedField(read_only=True, many=True)
@@ -74,10 +73,11 @@ class EpisodeSerializer(serializers.ModelSerializer):
                 'next_media', 'previous_media', 'duration', 'release_date',
                 'tv_show', 'season_num', 'season_title', 'episode_num']
 
+
 class ShowSerializer(serializers.ModelSerializer):
-    crew = serializers.StringRelatedField(read_only=True, many=True)
+    crew = serializers.PrimaryKeyRelatedField(many=True, queryset=Cast.objects.all())
     episodes = serializers.StringRelatedField()
-    season_num = serializers.SlugRelatedField(source='show',
+    num_season = serializers.SlugRelatedField(source='show',
                                               slug_field="season_num",
                                               queryset=Season.objects.all())
     season_title = serializers.StringRelatedField(source='show', read_only=True)
