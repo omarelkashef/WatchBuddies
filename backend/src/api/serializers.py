@@ -1,12 +1,11 @@
 from rest_framework import serializers
 from api.models import *
 
-class GenreField(serializers.RelatedField):
-    def to_representation(self, value):
-        return value.name
-    
-    def to_internal_value(self, data):
-        return Genre.objects.get_or_create(name=data)[0]
+class UserSerializer(serializers.ModelSerializer):
+    password = serializers.CharField(write_only=True)
+    class Meta:
+        model = User
+        fields = ['username', 'first_name', 'last_name', 'groups', 'buddies', 'parties', 'password']
 
 
 class CastSerializer(serializers.ModelSerializer):
@@ -36,7 +35,7 @@ class ReviewsSerializer(serializers.ModelSerializer):
 class MovieSerializer(serializers.ModelSerializer):
     crew = serializers.PrimaryKeyRelatedField(many=True, queryset=Cast.objects.all())
     avg_rating = serializers.ReadOnlyField()
-    genre = GenreField(many=True, queryset=Genre.objects.all())
+    genre = serializers.SlugRelatedField(many=True, slug_field='name', queryset=Genre.objects.all())
     previous_media = serializers.PrimaryKeyRelatedField(allow_null=True, queryset=Movie.objects.all())
     next_media = serializers.PrimaryKeyRelatedField(allow_null=True, queryset=Movie.objects.all())
     cover_image = serializers.CharField(allow_blank=True)
@@ -45,18 +44,6 @@ class MovieSerializer(serializers.ModelSerializer):
         model = Movie
         fields = ['id', 'title', 'genre', 'cover_image', 'avg_rating',
                 'next_media', 'previous_media', 'duration', 'release_date', 'crew']
-
-    def create(self, validated_data):
-        cast_data = validated_data.pop("crew")
-        genre_data = validated_data.pop("genre")
-        movie = Movie.objects.create(**validated_data)
-        for c in cast_data:
-            cast = Cast.objects.get_or_create(c.pk)
-            movie.crew.add(cast)
-        for genre in genre_data:
-            movie.genre.add(genre)        
-        movie.save()
-        return movie
         
 
 class EpisodeSerializer(serializers.ModelSerializer):
@@ -99,8 +86,13 @@ class ShowSerializer(serializers.ModelSerializer):
                   'cover_image', 'avg_rating', 'next_media', 'previous_media', 'release_date']
 
 
-
 class SeasonSerializer(serializers.ModelSerializer):
     class Meta:
         model = Season
+        fields = "__all__"
+
+
+class PartySerializer(serializers.ModelSerializer):
+    class Meta:
+        model = WatchParty
         fields = "__all__"

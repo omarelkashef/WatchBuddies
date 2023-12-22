@@ -22,7 +22,7 @@ class WatchParty(models.Model):
 
 
 class Cast(models.Model):
-    ACTOR = 1
+    ACTOR = 1    #need to add acctress or make gender attr
     DIRECTOR = 2
     CREW_MEMBERS = 3
 
@@ -35,14 +35,14 @@ class Cast(models.Model):
     first_name = models.TextField()
     last_name = models.TextField()
     birthdate = models.DateField()
-    cast_type = models.PositiveSmallIntegerField(choices=TYPES)
+    cast_type = models.PositiveSmallIntegerField(choices=TYPES) #need to make it a list
 
     def __str__(self):
         return f"{self.first_name} {self.last_name}"
 
 
 class Genre(models.Model):
-    name = models.CharField(max_length=127)
+    name = models.CharField(unique=True, max_length=127)
     description = models.CharField(max_length=255)
 
 
@@ -98,8 +98,6 @@ class Show(Media):
         return Episode.objects.filter(tv_show__pk=self.pk).count()
 
 
-    
-
 class Season(models.Model):
     title = models.TextField()
     show = models.ForeignKey("show", on_delete=models.CASCADE)
@@ -120,7 +118,9 @@ class Review(models.Model):
 class Invite(models.Model):
     first_sent = models.DateTimeField(auto_now_add=True)
     last_renewed = models.DateTimeField(auto_now_add=True)
+    responded = models.BooleanField(default=False)
     accepted = models.BooleanField(default=False)
+
 
     class Meta:
         abstract = True
@@ -129,8 +129,7 @@ class Invite(models.Model):
 class BuddiesInvite(Invite):
     sender = models.ForeignKey("User", on_delete=models.CASCADE, related_name="send_buddies_invite")
     receiver = models.ForeignKey("User", on_delete=models.CASCADE, related_name="received_buddies_invite")
-    class Meta:
-        unique_together = ['sender', 'receiver']
+
 
 
 class GroupInvite(Invite):
@@ -140,6 +139,7 @@ class GroupInvite(Invite):
 
     class Meta:
         unique_together = ['receiver', 'group']
+
 
 class PartyInvite(Invite):
     sender = models.ForeignKey("User", on_delete=models.CASCADE, related_name="send_party_invite")
