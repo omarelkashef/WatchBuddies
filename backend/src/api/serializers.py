@@ -96,3 +96,9 @@ class PartySerializer(serializers.ModelSerializer):
     class Meta:
         model = WatchParty
         fields = "__all__"
+
+
+class BuddyInviteSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = BuddiesInvite
+        fields = "__all__"

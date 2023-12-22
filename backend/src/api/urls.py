@@ -7,10 +7,12 @@ from . import views
 urlpatterns = [
     path('login', authtoken_views.obtain_auth_token, name='api-get-token'),
     path('user/<int:pk>', views.user_profile, name='api-profile'),
+    path('user/<int:pk>/buddy_invites', views.UserBuddyInviteList.as_view(), name='api-user-buddy-invites'),
     path('send_invite', views.SendInvite.as_view(), name='api-send-invite'),
     path('cancel_invite', views.CancelInvite.as_view(), name='api-cancel-invite'),
     path('respond_to_invite', views.RespondToInvite.as_view(), name='api-respond-to-invite'),
     path('remove_buddy', views.RemoveBuddy.as_view(), name='api-remove-buddy'),
+    path('buddy_invite/<int:pk>', views.BuddyInviteDetail.as_view(), name='api-buddy-invite'),
     path('movies/', views.movies, name='api-movies'),
     path('movies/<int:pk>', views.movie, name='api-movie'),
     path('shows/', views.shows, name='api-shows'),

@@ -262,3 +262,17 @@ class PartiesDetail(generics.RetrieveUpdateDestroyAPIView):
     serializer_class = PartySerializer
 
 party = PartiesDetail.as_view()
+
+
+class BuddyInviteDetail(generics.RetrieveAPIView):
+    serializer_class = BuddyInviteSerializer
+
+    def get_queryset(self):
+        return BuddiesInvite.objects.filter(pk=self.kwargs.get("pk"))
+
+
+class UserBuddyInviteList(generics.ListAPIView):
+    serializer_class = BuddyInviteSerializer
+
+    def get_queryset(self):
+        return BuddiesInvite.objects.filter(receiver=self.request.user)
