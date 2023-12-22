@@ -2,8 +2,8 @@ from rest_framework import status, generics
 from rest_framework.response import Response
 from rest_framework.views import APIView
 
-from django.db.models import Q
 
+from django.db.models import Q
 
 
 from api.models import *
@@ -19,13 +19,16 @@ class UserDetail(generics.RetrieveUpdateDestroyAPIView):
 user_profile = UserDetail.as_view()
 
 
-class SendBuddyInvite(APIView):  #can refacator into a genreal invite
+class SendInvite(APIView):  #can refacator into a genreal invite
     def post(self, request):
-        curr_user_id = request.user.pk
-        curr_user = User.objects.get(pk=curr_user_id)
+        curr_user= request.user
 
         other_user_id = request.data.get('receiver_id')
-        if curr_user_id == other_user_id:
+
+        if not other_user_id:
+            return Response({"error": "receiver_id is missing"}, status=status.HTTP_404_NOT_FOUND)
+
+        if curr_user.pk == int(other_user_id):
             return Response({"error": "Can not send an invite to yourself"}, status=status.HTTP_404_NOT_FOUND)
 
         try:
@@ -33,7 +36,7 @@ class SendBuddyInvite(APIView):  #can refacator into a genreal invite
         except User.DoesNotExist:
             return Response({"error": "User not found"}, status=status.HTTP_404_NOT_FOUND)
 
-        if curr_user.buddies.filter(pk=other_user).exists():
+        if curr_user.buddies.filter(pk=other_user_id).exists():
             return Response({"error": "Users are already buddies"}, status=status.HTTP_400_BAD_REQUEST)
         
         invite, new = BuddiesInvite.objects.filter(
@@ -41,20 +44,22 @@ class SendBuddyInvite(APIView):  #can refacator into a genreal invite
     ).get_or_create(defaults={"sender": curr_user, "receiver": other_user})
         
         if new or (invite.responded and not invite.accepted):
-            return Response({"message": "Buddy added successfully"}, status=status.HTTP_201_CREATED)
+            return Response({"message": "Invite sent successfully"}, status=status.HTTP_201_CREATED)
 
         return Response({"error": "The two users already have a valid invite"}, status=status.HTTP_400_BAD_REQUEST)
 
 
-class CancelBuddyInvite(APIView):
+class CancelInvite(APIView):
     def post(self, request):
-        sender_id = request.user.pk
-        sender = User.objects.get(pk=sender_id)
+        sender = request.user
 
         receiver_id = request.data.get('receiver_id')
         
-        if sender_id == receiver_id:
-            return Response({"error": "Can not send an invite to yourself"}, status=status.HTTP_404_NOT_FOUND)
+        if not receiver_id:
+            return Response({"error": "receiver_id is missing"}, status=status.HTTP_404_NOT_FOUND)
+    
+        if sender.pk == int(receiver_id):
+            return Response({"error": "Can not cancel an invite to yourself"}, status=status.HTTP_404_NOT_FOUND)
         
         try:
             receiver = User.objects.get(pk=receiver_id)
@@ -65,24 +70,27 @@ class CancelBuddyInvite(APIView):
             return Response({"error": "Users are already buddies"}, status=status.HTTP_400_BAD_REQUEST)
         
         try:
-            invite = BuddiesInvite.objects.filter(sender=sender, receiver=receiver).latest()
+            invite = BuddiesInvite.objects.get(sender=sender, receiver=receiver)
             if invite.responded:
                 return Response({"error": "This invitation has already been accepted or declined"}, status=status.HTTP_400_BAD_REQUEST)
             invite.delete()
         except BuddiesInvite.DoesNotExist:
             return Response({"error": "This invitation does not exist"}, status=status.HTTP_400_BAD_REQUEST)
         
-        return Response({"message": "Buddy deleted successfully"}, status=status.HTTP_201_CREATED)
+        return Response({"message": "Invite canceled successfully"}, status=status.HTTP_201_CREATED)
     
 
-class RespondToBuddyInvite(APIView):
-    def post(self, request, accept):
-        receiver_id = request.user.pk
-        receiver = User.objects.get(pk=receiver_id)
+class RespondToInvite(APIView):
+    def post(self, request):
+        receiver = request.user
 
         sender_id = request.data.get('sender_id')
-        
-        if sender_id == receiver_id:
+        accept = request.data.get('accept')
+
+        if not sender_id or not accept:
+            return Response({"error": "sender_id and/or accept is missing"}, status=status.HTTP_404_NOT_FOUND)
+    
+        if sender_id == receiver.pk:
             return Response({"error": "Can not send an invite to yourself"}, status=status.HTTP_404_NOT_FOUND)
         
         try:
@@ -92,16 +100,51 @@ class RespondToBuddyInvite(APIView):
 
         try:
             invite = BuddiesInvite.objects.get(sender=sender, receiver=receiver)
+            if invite.responded:
+                return Response({"error": "Invite has already been responded to"}, status=status.HTTP_404_NOT_FOUND)
+
             invite.responded = True
-            if accept:
-                invite.accepted = True
-                receiver.buddies.add(sender)
+            if not int(accept):
+                invite.save()
+                return Response({"message": "Invite declined successfully"}, status=status.HTTP_201_CREATED)
+            
+            invite.accepted = True
+            receiver.buddies.add(sender)
             invite.save()
+            return Response({"message": "Invite accepted successfully"}, status=status.HTTP_201_CREATED)
+
         except BuddiesInvite.DoesNotExist:
             return Response({"error": "This invitation does not exist"}, status=status.HTTP_400_BAD_REQUEST)
-        
-        return Response({"message": "Buddy accepted successfully"}, status=status.HTTP_201_CREATED)
+
+
+class RemoveBuddy(APIView):
+    def post(self, request):
+        curr_user = request.user
+
+        buddy_id = int(request.data.get('buddy_id'))
+
+        if not buddy_id:
+            return Response({"error": "buddy_id is missing"}, status=status.HTTP_404_NOT_FOUND)
     
+        if curr_user.pk == buddy_id:
+            return Response({"error": "You are not friends with yourself"}, status=status.HTTP_404_NOT_FOUND)
+        
+        try:
+            buddy = User.objects.get(pk=buddy_id)
+        except User.DoesNotExist:
+            return Response({"error": "User not found"}, status=status.HTTP_404_NOT_FOUND)
+        
+        if not curr_user.buddies.filter(pk=buddy_id).exists():
+            return Response({"error": "Users are not buddies"}, status=status.HTTP_400_BAD_REQUEST)
+        
+        curr_user.buddies.remove(buddy)
+        invites = BuddiesInvite.objects.filter(
+                    Q(sender=curr_user, receiver=buddy) | Q(sender=buddy, receiver=curr_user)
+                )
+        if invites:
+            invites.delete()
+        return Response({"message": "Buddy removed successfully"}, status=status.HTTP_201_CREATED)
+
 
 class MoviesList(generics.ListCreateAPIView):
     queryset = Movie.objects.all()

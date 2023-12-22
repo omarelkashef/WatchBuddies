@@ -1,16 +1,16 @@
 from django.urls import path
-#from rest_framework.authtoken import views as authtoken_views
-from rest_framework.authentication import BasicAuthentication
+from rest_framework.authtoken import views as authtoken_views
 
 
 from . import views
 
 urlpatterns = [
-    #path('login/', authtoken_views.obtain_auth_token, name='api-get-token'),
+    path('login', authtoken_views.obtain_auth_token, name='api-get-token'),
     path('user/<int:pk>', views.user_profile, name='api-profile'),
-    path('send_buddy_invite', views.SendBuddyInvite.as_view(), name='api-send-buddy-invite'),
-    path('cancel_buddy_invite', views.CancelBuddyInvite.as_view(), name='api-cancel-buddy-invite'),
-    path('accept_buddy_invite', views.RespondToBuddyInvite.as_view(), name='api-respond-to-buddy-invite'),
+    path('send_invite', views.SendInvite.as_view(), name='api-send-invite'),
+    path('cancel_invite', views.CancelInvite.as_view(), name='api-cancel-invite'),
+    path('respond_to_invite', views.RespondToInvite.as_view(), name='api-respond-to-invite'),
+    path('remove_buddy', views.RemoveBuddy.as_view(), name='api-remove-buddy'),
     path('movies/', views.movies, name='api-movies'),
     path('movies/<int:pk>', views.movie, name='api-movie'),
     path('shows/', views.shows, name='api-shows'),
