@@ -7,7 +7,9 @@ from . import views
 urlpatterns = [
     path('login', authtoken_views.obtain_auth_token, name='api-get-token'),
     path('user/<int:pk>', views.user_profile, name='api-profile'),
-    path('user/<int:pk>/buddy_invites', views.UserBuddyInviteList.as_view(), name='api-user-buddy-invites'),
+    path('user/buddy_invites', views.UserBuddyInviteList.as_view(), name='api-user-buddy-invites'),
+    path('user/buddies', views.UserBuddiesList.as_view(), name='api-user-buddies'),    
+    path('user/parties', views.UserPartiesList.as_view(), name='api-user-parties'),
     path('send_invite', views.SendInvite.as_view(), name='api-send-invite'),
     path('cancel_invite', views.CancelInvite.as_view(), name='api-cancel-invite'),
     path('respond_to_invite', views.RespondToInvite.as_view(), name='api-respond-to-invite'),
@@ -28,4 +30,6 @@ urlpatterns = [
     path('genres/<int:pk>', views.genre, name='api-genre'),
     path('cast/', views.all_cast, name='api-all_cast'),
     path('cast/<int:pk>', views.cast, name='api-cast'),
+    path('party/<int:pk>', views.PartyDetail.as_view(), name='api-party'),
+
 ]

@@ -1,6 +1,8 @@
 from rest_framework import status, generics
 from rest_framework.response import Response
 from rest_framework.views import APIView
+from rest_framework.exceptions import NotFound
+
 
 
 from django.db.models import Q
@@ -257,12 +259,22 @@ class CastDetail(generics.RetrieveUpdateDestroyAPIView):
 cast = CastDetail.as_view()
 
 
-class PartiesDetail(generics.RetrieveUpdateDestroyAPIView):
-    queryset = WatchParty.objects.all()
+class PartyDetail(generics.RetrieveAPIView):
     serializer_class = PartySerializer
 
-party = PartiesDetail.as_view()
+    def get_queryset(self):
+        try:
+            return WatchParty.objects.get(pk=self.kwargs.get("pk"))
+        except WatchParty.DoesNotExist:
+            raise NotFound(detail="Party not found", code=404)
 
+
+class UserPartiesList(generics.ListAPIView):
+    serializer_class = PartySerializer
+
+    def get_queryset(self):
+        return User.objects.get(pk=self.request.user.pk).parties
+    
 
 class BuddyInviteDetail(generics.RetrieveAPIView):
     serializer_class = BuddyInviteSerializer
@@ -275,4 +287,11 @@ class UserBuddyInviteList(generics.ListAPIView):
     serializer_class = BuddyInviteSerializer
 
     def get_queryset(self):
-        return BuddiesInvite.objects.filter(receiver=self.request.user)
+        return BuddiesInvite.objects.filter(receiver=self.request.user.pk)
+    
+
+class UserBuddiesList(generics.ListAPIView):
+    serializer_class = UserSerializer
+    
+    def get_queryset(self):
+        return User.objects.get(pk=self.request.user.pk).buddies
